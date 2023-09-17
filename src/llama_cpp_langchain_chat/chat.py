@@ -1,7 +1,7 @@
 from langchain import PromptTemplate, ConversationChain
 from langchain.llms import LlamaCpp
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from os import environ, getenv, mkdir
+from os import getenv, mkdir
 from os.path import exists, join, splitext, realpath, dirname
 from dotenv import load_dotenv, find_dotenv
 from PIL import Image
@@ -15,9 +15,11 @@ import toml
 # Enable for debugging
 # from chainlit.playground.config import add_llm_provider
 # from chainlit.playground.providers.langchain import LangchainGenericProvider
-INIT = False
-CARD_AVATAR = None
 load_dotenv(find_dotenv())
+INIT = False
+PROMPT_READY= False
+CARD_AVATAR = None
+CHARACTER_NAME = getenv("CHARACTER_NAME")
 
 txt_template = """
 {prompt_content}
@@ -32,10 +34,15 @@ Question: {input}
 card_template = """
 ### Instruction:
 Continue the chat dialogue below. Write {character}'s next reply in a chat between User and {character}. Write a single reply only.
+
+### Input:
+Description:
 {description}
 
+Scenario:
 {scenario}
 
+Message Examples:
 {mes_example}
 
 Current conversation:
@@ -57,7 +64,7 @@ def parse_prompt():
     prompt_name = getenv("CHARACTER_CARD")
     prompt_source =join(prompt_dir, prompt_name) 
     extension = splitext(prompt_source)[1]
-
+    global PROMPT_READY
     match extension:
         case ".txt":
             #No initial messages for text prompts. Live with it
@@ -71,7 +78,8 @@ def parse_prompt():
                 toml_dict["UI"]["name"] = getenv("CHARACTER_NAME")
 
             with open(config_toml_path, "w") as toml_file:
-                new_toml_string = toml.dump(toml_dict, toml_file)
+                toml.dump(toml_dict, toml_file)
+            PROMPT_READY = True
             return text_prompt.partial(prompt_content=prompt_file,)
         case ".json":
             with open(prompt_source) as f:
@@ -115,14 +123,16 @@ def parse_prompt():
                 CARD_AVATAR = copy_image_filename
 
     prompt = PromptTemplate(template=card_template, input_variables=["character", "description", "scenario", "mes_example", "history", "input"])
+    global CHARACTER_NAME
     char_name = card["name"] if "name" in card else card["char_name"]
+    CHARACTER_NAME = char_name
 
     with open(config_toml_path, "r") as toml_file:
         toml_dict = toml.load(toml_file)
         toml_dict["UI"]["name"] = char_name
 
     with open(config_toml_path, "w") as toml_file:
-        new_toml_string = toml.dump(toml_dict, toml_file)
+        toml.dump(toml_dict, toml_file)
 
     description = card["description"] if "description" in card else card["char_persona"]
     scenario = card["scenario"] if "scenario" in card else card["world_scenario"]
@@ -133,9 +143,24 @@ def parse_prompt():
     mes_example = mes_example.replace("{{user}}","User")
     first_message = first_message.replace("{{user}}","User")
 
+    description = description.replace("{{User}}","User")
+    scenario = scenario.replace("{{User}}","User")
+    mes_example = mes_example.replace("{{User}}","User")
+    first_message = first_message.replace("{{User}}","User")
+
+    description = description.replace("{{char}}",char_name)
+    scenario = scenario.replace("{{char}}",char_name)
+    mes_example = mes_example.replace("{{char}}",char_name)
+    first_message = first_message.replace("{{char}}",char_name)
+
+    description = description.replace("{{Char}}",char_name)
+    scenario = scenario.replace("{{Char}}",char_name)
+    mes_example = mes_example.replace("{{Char}}",char_name)
+    first_message = first_message.replace("{{Char}}",char_name)
+
     with open(help_file_path, "w") as w:
         w.write(first_message)
-
+    PROMPT_READY = True
     return prompt.partial(character = char_name,description = description, scenario = scenario, mes_example = mes_example) 
 
 @cl.cache
@@ -144,7 +169,6 @@ def get_avatar_image():
         prompt_dir = getenv("CHARACTER_CARD_DIR")
         prompt_name = getenv("CHARACTER_CARD")
         prompt_source =join(prompt_dir, prompt_name)
-        print(prompt_source)
         base = splitext(prompt_source)[0]
         if exists(base + ".png"):
             return base + ".png"
@@ -185,7 +209,7 @@ LLM_MODEL = instantiate_llm()
 
 @cl.author_rename
 def rename(orig_author: str):
-    rename_dict = {"Chatbot": getenv("CHARACTER_NAME")}
+    rename_dict = {"Chatbot": CHARACTER_NAME}
     return rename_dict.get(orig_author, orig_author)
 
 
@@ -195,8 +219,8 @@ async def start():
     USE_AVATAR_IMAGE
 
     if USE_AVATAR_IMAGE:
-        await cl.Avatar(name=environ["CHARACTER_NAME"], path=AVATAR_IMAGE, size="large").send()
-    if not INIT:
+        await cl.Avatar(name=CHARACTER_NAME, path=AVATAR_IMAGE, size="large").send()
+    if PROMPT_READY and not INIT:
         llm_chain = ConversationChain(prompt=PROMPT, llm=LLM_MODEL, memory=ConversationBufferWindowMemory(k=10))
         cl.user_session.set("llm_chain", llm_chain)
         INIT = True
