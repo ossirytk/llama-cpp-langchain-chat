@@ -3,6 +3,7 @@
 dist/
 src/llama_cpp_langchain_chat/__pycache__/
 src/llama_cpp_langchain_chat/.chainlit/.langchain.db
+src/llama_cpp_langchain_chat/.chainlit/config.toml
 src/llama_cpp_langchain_chat/temp/
 src/llama_cpp_langchain_chat/test.py
 src/llama_cpp_langchain_chat/chainlit.md

@@ -8,7 +8,7 @@ cache = false
 prompt_playground = true
 
 [UI]
-name = "Chatbot"
+name = "Assistant"
 default_collapse_content = true
 default_expand_messages = false
 hide_cot = false
