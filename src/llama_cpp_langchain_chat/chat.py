@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append('.')
+sys.path.append('..')
 from llama_cpp_langchain_chat import *
 from langchain import ConversationChain
 from langchain.chains.conversation.memory import ConversationBufferWindowMemory

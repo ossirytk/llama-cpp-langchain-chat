@@ -24,7 +24,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "langchain==0.0.300", "chainlit==0.7.0", "llama-cpp-python==0.2.6", "Pillow==10.0.0", "PyYAML==6.0.1","toml==0.10.2",
+  "langchain==0.0.314", "chainlit==0.7.2", "llama-cpp-python==0.2.11", "Pillow==10.0.1", "PyYAML==6.0.1","toml==0.10.2",
 ]
 
 [project.urls]

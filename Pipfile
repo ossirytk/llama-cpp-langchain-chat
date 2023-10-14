@@ -4,9 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-langchain = "==0.0.300"
-chainlit = "==0.7.0"
-pillow = "==10.0.0"
+langchain = "==0.0.314"
+chainlit = "==0.7.2"
+pillow = "==10.0.1"
 pyyaml = "==6.0.1"
 llama-cpp-python = "==0.2.6"
 toml = "==0.10.2"
