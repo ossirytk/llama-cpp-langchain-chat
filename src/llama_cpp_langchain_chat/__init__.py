@@ -25,10 +25,10 @@ Question: {input}
 """
 
 card_template = """
-### Instruction:
+{llama_instruction}
 Continue the chat dialogue below. Write {character}'s next reply in a chat between User and {character}. Write a single reply only.
 
-### Input:
+{llama_input}
 Description:
 {description}
 
@@ -43,8 +43,9 @@ Current conversation:
 
 Question: {input}
 
-### Response:
+{llama_response}
 """
+
 
 def parse_prompt():
     #Currently the chat welcome message is read from chainlit.md file.
@@ -111,7 +112,7 @@ def parse_prompt():
             else:
                 CARD_AVATAR = copy_image_filename
 
-    prompt = PromptTemplate(template=card_template, input_variables=["character", "description", "scenario", "mes_example", "history", "input"])
+    prompt = PromptTemplate(template=card_template, input_variables=["character", "description", "scenario", "mes_example", "history", "input", "llama_input", "llama_instruction", "llama_response"])
     global CHARACTER_NAME
     char_name = card["name"] if "name" in card else card["char_name"]
     CHARACTER_NAME = char_name
@@ -122,6 +123,15 @@ def parse_prompt():
 
     with open(config_toml_path, "w") as toml_file:
         toml.dump(toml_dict, toml_file)
+
+    if getenv("MODEL_TYPE") == "llama":
+        llama_instruction ="### Instruction:"
+        llama_input = "### Input:"
+        llama_response ="### Response:"
+    else:
+        llama_instruction =""
+        llama_input =""
+        llama_response =""
 
     description = card["description"] if "description" in card else card["char_persona"]
     scenario = card["scenario"] if "scenario" in card else card["world_scenario"]
@@ -149,7 +159,7 @@ def parse_prompt():
 
     with open(help_file_path, "w") as w:
         w.write(first_message)
-    return prompt.partial(character = char_name,description = description, scenario = scenario, mes_example = mes_example) 
+    return prompt.partial(character = char_name,description = description, scenario = scenario, mes_example = mes_example, llama_input = llama_input, llama_instruction= llama_instruction, llama_response = llama_response) 
 
 def get_avatar_image():
     if CARD_AVATAR is None:
